@@ -1,8 +1,4 @@
 
-//need to add the functions for clicking button
-
-
-
 
 class TimersDashboard extends React.Component {
     state = {
@@ -12,6 +8,7 @@ class TimersDashboard extends React.Component {
                 project: 'Gym Chores',
                 id: uuid.v4(),
                 elapsed: 5456099,
+                hasTimerStarted: false,
                 runningSince: Date.now(),
             },
             {
@@ -19,10 +16,16 @@ class TimersDashboard extends React.Component {
                 project: 'Kitchen Chores',
                 id: uuid.v4(),
                 elapsed: 1273998,
+                hasTimerStarted: false,
                 runningSince: null,
             },
         ],
+        intervalIds: []
     };
+
+    // [
+    //     { intervalId: 12, timerID: 'ii'}
+    // ]
 
     // Inside TimersDashboard
     handleCreateFormSubmit = (timer) => {
@@ -60,10 +63,49 @@ class TimersDashboard extends React.Component {
                 return true;
             }
         });
+
         console.log(timers, "AFTER");
 
         this.setState({
             timers: timers,
+        })
+    };
+
+    stopTimer = (timerId) => {
+        console.log(timerId);
+        // remove intervalId and clear it
+        const intervalIds = this.state.intervalIds.filter((interval) => {
+            if (interval.timerId === timerId) {
+                clearInterval(interval.intervalId);
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+        // set timer.hasTImerStarted to false
+        const timers = this.state.timers.map((timer) => {
+            // get the particular timer
+            // and change timer.hasTImerStarted to false
+            if (timer.id === timerId) {
+                // if(timer.hasTimerStarted) {
+                    timer.hasTimerStarted = false;
+                    return timer
+                //}
+            } else {
+                return timer;
+            }
+
+        });
+        // console.log(timers, "AFTER");
+        // this.stopTimer(timerId);
+        // timer.hasTimerStarted = false;
+        // return timer;
+
+        // update the state with the then timers and intervalId
+        this.setState({
+            intervalIds: intervalIds,
+            timers: timers
         })
     };
 
@@ -72,13 +114,25 @@ class TimersDashboard extends React.Component {
         // [timer, timer]
         // timer[id].elapsed -= 1
 
+        // 1. create an interval of 1second
+        // 2. add the invertalId and timerId to the state
+        // 3. update time elapsed
+
         const intervalId = setInterval(() => {
             const timers = this.state.timers.map((timer) => {
                 if (timer.id === timerId) {
-                    console.log(helpers.renderElapsedString(timer.elapsed), "BEFORE");
+                    // console.log(helpers.renderElapsedString(timer.elapsed), "BEFORE");
+                    //1. subtract 1s fromelapsed time
+                    //2. if the timer.hasTimerStarted is false set to true
+
                     const newElapsed = (timer.elapsed/1000 -1) * 1000;
+                    if(!timer.hasTimerStarted) {
+                        timer.hasTimerStarted = true;
+                    }
+
                     timer.elapsed = newElapsed;
-                    console.log(helpers.renderElapsedString(newElapsed), "AFTER");
+                    // console.log(helpers.renderElapsedString(newElapsed), "AFTER");
+                    return timer;
                 } else {
                     return timer
                 }
@@ -86,7 +140,17 @@ class TimersDashboard extends React.Component {
             this.setState({ timers: timers })
         }, 1000);
 
-        console.log(intervalId)
+        this.setState((prevState) => {
+            const intervalIds = [...prevState.intervalIds,  {
+                intervalId: intervalId, timerId: timerId
+            }]
+
+            return {
+                intervalIds: intervalIds
+            }
+        });
+
+        //console.log(intervalId)
         // const timers = this.state.timers.map((timer) => {
         //     if (timer.id === timerId) {
         //         console.log(helpers.renderElapsedString(timer), "BEFORE");
@@ -115,6 +179,7 @@ class TimersDashboard extends React.Component {
                     updateTimer={this.updateTimer}
                     deleteTimer={this.deleteTimer}
                     startTimer={this.startTimer}
+                    stopTimer={this.stopTimer}
                 />
                 <ToggleableTimerForm
                     onFormSubmit={this.handleCreateFormSubmit}
@@ -194,10 +259,12 @@ class EditableTimerList extends React.Component {
                 title={timer.title}
                 project={timer.project}
                 elapsed={timer.elapsed}
+                hasTimerStarted={timer.hasTimerStarted}
                 runningSince={timer.runningSince}
                 updateTimer={this.props.updateTimer}
                 deleteTimer={this.props.deleteTimer}
                 startTimer={this.props.startTimer}
+                stopTimer={this.props.stopTimer}
             />
         ));
         return (
@@ -239,10 +306,12 @@ class EditableTimer extends React.Component {
                     title={this.props.title}
                     project={this.props.project}
                     elapsed={this.props.elapsed}
+                    hasTimerStarted={this.props.hasTimerStarted}
                     runningSince={this.props.runningSince}
                     editTimer={this.editTimer}
                     deleteTimer={this.props.deleteTimer}
                     startTimer={this.props.startTimer}
+                    stopTimer={this.props.stopTimer}
                 />
             );
         }
@@ -275,8 +344,14 @@ class Timer extends React.Component {
                         </span>
                     </div>
                 </div>
-                <button className='ui bottom attached blue basic button' onClick={() => this.props.startTimer(this.props.id)}>
-                    Start
+                <button className='ui bottom attached blue basic button' onClick={() => {
+                    if (this.props.hasTimerStarted) {
+                        this.props.stopTimer(this.props.id)
+                    } else {
+                        this.props.startTimer(this.props.id)
+                    }
+                }}>
+                    {this.props.hasTimerStarted ? 'Stop' : 'Start'}
                 </button>
             </div>
         );
