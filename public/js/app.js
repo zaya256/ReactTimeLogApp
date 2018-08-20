@@ -36,7 +36,7 @@ class TimersDashboard extends React.Component {
         });
     };
 
-    updateTimer = (attrs) = {
+    updateTimer = (attrs) => {
         this.setState({
             timers: this.state.timers.map((timer) => {
                 if (timer.id === attrs.id) {
@@ -50,18 +50,61 @@ class TimersDashboard extends React.Component {
     )
     };
 
-    deleteTimer = (attrs) => {
-    this.setState({
-        timers: this.state.timers.filter((timer) => {
-            if (timer.id === attrs.id) {
+    deleteTimer = (timerId) => {
+        // console.log(timerId);
+        console.log(this.state.timers, "BEFORE")
+        const timers = this.state.timers.filter((timer) => {
+            if (timer.id === timerId) {
                 return false;
             } else {
                 return true;
             }
+        });
+        console.log(timers, "AFTER");
+
+        this.setState({
+            timers: timers,
         })
-    })
     };
 
+    startTimer = (timerId) => {
+        console.log(timerId);
+        // [timer, timer]
+        // timer[id].elapsed -= 1
+
+        const intervalId = setInterval(() => {
+            const timers = this.state.timers.map((timer) => {
+                if (timer.id === timerId) {
+                    console.log(helpers.renderElapsedString(timer.elapsed), "BEFORE");
+                    const newElapsed = (timer.elapsed/1000 -1) * 1000;
+                    timer.elapsed = newElapsed;
+                    console.log(helpers.renderElapsedString(newElapsed), "AFTER");
+                } else {
+                    return timer
+                }
+            });
+            this.setState({ timers: timers })
+        }, 1000);
+
+        console.log(intervalId)
+        // const timers = this.state.timers.map((timer) => {
+        //     if (timer.id === timerId) {
+        //         console.log(helpers.renderElapsedString(timer), "BEFORE");
+        //         const newTime = (timer.elapsed/1000 -1) * 1000;
+        //         console.log(helpers.renderElapsedString(newTime), "AFTER");
+        //     } else {
+        //         return timer
+        //     }
+        // })
+        //
+        // const timers = this.state.timers.filter((timer) => {
+        //     if (timer.id === timerId) {
+        //         return false;
+        //     } else {
+        //         return true;
+        //     }
+        // });
+    };
 
     render() {
     return (
@@ -71,6 +114,7 @@ class TimersDashboard extends React.Component {
                     timers={this.state.timers}
                     updateTimer={this.updateTimer}
                     deleteTimer={this.deleteTimer}
+                    startTimer={this.startTimer}
                 />
                 <ToggleableTimerForm
                     onFormSubmit={this.handleCreateFormSubmit}
@@ -153,6 +197,7 @@ class EditableTimerList extends React.Component {
                 runningSince={timer.runningSince}
                 updateTimer={this.props.updateTimer}
                 deleteTimer={this.props.deleteTimer}
+                startTimer={this.props.startTimer}
             />
         ));
         return (
@@ -176,10 +221,6 @@ class EditableTimer extends React.Component {
 
     };
 
-    deleteTimer = () => {
-        this.setState()
-    }
-
     render() {
         if (this.state.editFormOpen) {
             return (
@@ -200,7 +241,8 @@ class EditableTimer extends React.Component {
                     elapsed={this.props.elapsed}
                     runningSince={this.props.runningSince}
                     editTimer={this.editTimer}
-                    deleteTimer={this.deleteTimer}
+                    deleteTimer={this.props.deleteTimer}
+                    startTimer={this.props.startTimer}
                 />
             );
         }
@@ -228,14 +270,14 @@ class Timer extends React.Component {
             <span className='right floated edit icon' onClick={this.props.editTimer}>>
               <i className='edit icon' />
             </span>
-                        <span className='right floated trash icon' onClick={this.props.deleteTimer}>
-              <i className='trash icon' />
-            </span>
+                        <span className='right floated trash icon' onClick={() => this.props.deleteTimer(this.props.id)}>
+                            <i className='trash icon' />
+                        </span>
                     </div>
                 </div>
-                <div className='ui bottom attached blue basic button'>
+                <button className='ui bottom attached blue basic button' onClick={() => this.props.startTimer(this.props.id)}>
                     Start
-                </div>
+                </button>
             </div>
         );
     }
